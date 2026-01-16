@@ -1,0 +1,715 @@
+/*daihinmin*/ 
+
+struct state_type
+{
+  int ord;
+  int sequence;
+  int qty;
+  int rev;
+  int b11;
+  int lock;
+  int onset;
+  int suit[5];
+
+  int player_qty[5];
+  int player_rank[5];
+  int seat[5];
+
+  int joker;
+}state;
+
+struct seatsort_state//席順(自分を0とする)にプレイヤの状態を格納
+{
+  int seat[5];//各席のプレイヤ番号
+  int score[5];//合計スコア
+  int old_rank[5];//前回ゲームの階級
+  int hand_qty[5];//手札枚数
+  int pass[5];//パスであれば1,手札枚数0であれば3
+}ss;
+
+
+
+//////VV-8/////////////////////
+
+struct state_type
+{
+  //提出されたカード、提出されたカード+手札の集合、まだ出されていないカードを入れる	
+  int submitted_cards[8][15];
+  int submitted_cards_plus_hands[8][15];
+  int rest_cards[8][15];
+
+  //都合により、自分の手札をコピー
+  //int temoti_cards[8][15];
+	
+  //状態を記録(計算時間の短縮のため）
+  /*
+    int rest_cards_b1[8][15];
+    int rest_cards_b2[8][15];
+    int rest_cards_b3[8][15];
+    int rest_cards_b4[8][15];
+    int rest_cards_b5[8][15];
+    int rest_cards_b6[8][15];
+    int rest_cards_b7[8][15];
+	
+    int my_cards_b1[8][15];
+    int my_cards_b2[8][15];
+    int my_cards_b3[8][15];
+    int my_cards_b4[8][15];
+    int my_cards_b5[8][15];
+    int my_cards_b6[8][15];
+    int my_cards_b7[8][15];
+	
+    int rest_cards_j1[8][15];
+    int rest_cards_j2[8][15];
+    int rest_cards_j3[8][15];
+	
+    int my_cards_j1[8][15];
+    int my_cards_j2[8][15];
+    int my_cards_j3[8][15];
+
+    int flag_b1;
+    int flag_b2;
+    int flag_b3;
+    int flag_b4;
+    int flag_b5;
+    int flag_b6;
+    int flag_b7;
+
+    int joker_i1;
+    int joker_i2;
+    int joker_i3;
+    int joker_j1;
+    int joker_j2;
+    int joker_j3;
+
+    int rev_b1;
+    int rev_b2;
+    int rev_b3;
+	
+    int rev_j1;
+    int rev_j2;
+    int rev_j3;
+  */
+
+  //手札を分割し作成した組を収納（手札交換の際に、一時的に手札が13枚になることもあるため、13個作成。
+  int kumi0[8][15];
+  int kumi1[8][15];
+  int kumi2[8][15];
+  int kumi3[8][15];
+  int kumi4[8][15];
+  int kumi5[8][15];
+  int kumi6[8][15];
+  int kumi7[8][15];
+  int kumi8[8][15];
+  int kumi9[8][15];
+  int kumi10[8][15];
+  int kumi11[8][15];//手札交換時の手札組数に対応
+  int kumi12[8][15];
+
+  //手札の組み分け後に、情報を収納	
+  int kumi_info[16][60];	
+  //[0][]から[12][]までは組の情報//手札交換の際に手札が13枚となり組が13組になることがあるため
+  //[][0]に組の種類(シングル1、ペア2、階段3)、
+  //[][1]に枚数、[][2]にマーク、[][3]に組内の最弱カードのランク、[][4]に組内の最強カードのランク
+  //[][5]に強さ評価値、[][6]に1枚当たりの強さ評価値、[][7に革命時の強さ評価値、
+  //[][8]に1枚あたりの革命時の強さ評価値、[][9]に流し評価値、[][10]に1枚当たりの流し評価値、
+  //[][11]に革命時の流し評価値、[][12]に1枚当たりの革命時の流し評価値、[][13]にJOKERの有無
+  //[][14]に革命を引き起こすか
+  //[][15]組内の最弱カードの値を、手札の組数によって調整したもの
+  //[][15]組内の最強カードの値を、手札の組数によって調整したもの
+  //が、収納されている。
+  //強さ評価値と流し評価値は、8が絡んだ際に異なる数字となる。8が絡まない場合は強さ評価値と流し評価値は一致する。
+	
+  //[13][]は手札の情報
+  //[][0]に組の数、[][1]に革命を引き起こせる組を持つか、
+  //[][2]に手札評価値（強さ評価値の合計）、[][3]に革命時の手札評価値、
+  //[][4]に流し評価値の合計、[][5]に革命時の流し評価値の合計
+  //[][6]に規定値を超えた流し評価値（1枚当たり）を持つ組の数
+  //[][7]に革命時の、規定値を超えた流し評価値（1枚当たり）を持つ組の数
+  //[][8]に手札の枚数、[][9]シングルの組数[][10]ペア（2枚組）の組数
+  //[][11]ペア（3枚組）の組数[][12]階段（3枚組）の組数
+  //[][13]ペア（4枚組以上）の組数[][14]階段（4枚組以上）の組数
+  //[][15]に「1枚当たりの流し評価値」の合計
+  //[][16]に「1枚当たりの革命時の流し評価値」の合計
+  //[][17]に「「1枚当たりの流し評価値」の合計」を組数で割ったもの
+  //[][18]に「「1枚当たりの革命時の流し評価値の合計」を組数で割ったもの
+  //[][19]に「流し評価値の合計」を組数で割ったもの
+  //[][20]に「革命時の流し評価値の合計」を組数で割ったもの
+  //[][21]に手札内で最も強い「シングルの組」のランク
+  //[][22]に手札内で最も強い「ペア（2枚組）の組」のランク
+  //[][23]に手札内で最も強い「ペア（3枚組）の組」のランク
+	
+  //通常時は2以外、革命時は3以外
+  //[][24]に規定値以上の流し評価値をもつシングルの組数（8以外）(2以外)
+  //[][25]に規定値以上の流し評価値をもつシングルの組数（8）
+  //[][26]に規定値以上の流し評価値をもつペアの組数（8以外）(2以外）
+  //[][27]に規定値以上の流し評価値をもつペアの組数（8）
+  //[][28]に規定値以上の流し評価値をもつ3枚組(トリプル）の組数(8以外)(2以外)
+  //[][29]に規定値以上の流し評価値をもつ3枚組(トリプル）の組数(8)
+  //[][30]に規定値以上の流し評価値をもつ3枚組(階段）の組数
+  //[][31]に規定値以上の流し評価値をもつ4枚以上のペアの組数(8以外)(2以外)
+  //[][32]に規定値以上の流し評価値をもつ4枚以上のペアの組数(8)
+  //[][33]に規定値以上の流し評価値をもつ4枚以上の階段の組数
+							
+  //[][34]に2（革命時は3）を含む階段以外の組の数
+  //[][35]に規定値－1以上の流し評価値をもつ組の数//これまでの規定値100よりも緩いものを。
+							
+  //[][36]に規定値-1以上の流し評価値をもつシングルの組数（8以外）(2以外)
+  //[][37]に規定値-1以上の流し評価値をもつシングルの組数（8）
+  //[][38]に規定値-1以上の流し評価値をもつペアの組数（8以外）(2以外）
+  //[][39]に規定値-1以上の流し評価値をもつペアの組数（8）
+  //[][40]に規定値-1以上の流し評価値をもつ3枚組(トリプル）の組数(8以外)(2以外)
+  //[][41]に規定値-1以上の流し評価値をもつ3枚組(トリプル）の組数(8)
+  //[][42]に規定値-1以上の流し評価値をもつ3枚組(階段）の組数
+  //[][43]に規定値-1以上の流し評価値をもつ4枚以上のペアの組数(8以外)(2以外)
+  //[][44]に規定値-1以上の流し評価値をもつ4枚以上のペアの組数(8)
+  //[][45]に規定値-1以上の流し評価値をもつ4枚以上の階段の組数
+							
+  //[][46]に2のシングルの数（革命時は3）
+  //[][47]に2のペア(2枚組)
+  //[][48]に2のトリプル
+							
+  //[][49]に規定値－2以上の流し評価値をもつ組の数//これまでの規定値100よりも緩いものを。
+  //[][50]に規定値－4以上の流し評価値をもつ組//これまでの規定値100よりも緩いものを。
+						
+							
+  //[14][]※革命時に対応していない
+  //[][0]規定値(100)未満の組の数
+  //[][2]規定値未満の流し評価値の合計
+  //[][4]規定値未満の1枚単位の流し評価値の合計
+  //[][6]  [][4]を組数で割ったもの
+  //[][8]  [][2]を組数で割ったもの
+  //[][10]通常時の規定値-1以上の組と3枚組以上の組の合計。
+  //[][11]通常時の規定値以上の組と3枚組以上の組の合計。
+  //[][12]通常時の規定値以上の組と3枚組以上の組の合計。
+  //が、収納されている。
+							
+  //[15][]//最も評価値の低い組を除いて、手札評価値等を求めてみる。
+  //[][0]//流し評価値の合計[13][4]から、1枚当たりの流し評価値が最も低い組の値を除いたもの
+
+  //jokerやスペードの3関連					
+  int submit_joker;
+  int joker_risk;
+  int submit_s3;
+  int s3_risk;
+  int find_s3;
+  int have_s3;
+  //プレイヤー関連。（あまり活用できていない・・・）
+  int player_number;//名前は変だが、残りプレイヤー数を保存している。
+  int player_number_point;
+  int pre_rank;
+
+  //手札分割関連
+  //革命を起こすかどうか、my_lead5用
+  int cause_rev;
+  //終盤用
+  int finish;				
+							
+  //my_follow3での数値の確認
+  int tsuyosa;
+
+  //その他(?)
+							
+  int game_count;
+
+  int player_info[5][3];//[0][]に自分、[1][]に自分のひとつ前に座っている人・・・
+  //[][0]にプレイヤー番号、[][1]に手札枚数、[][2]に階級
+  int player_info2[5][3];//[0][]に自分、[1][]に自分のひとつ前に座っている人・・・
+  //[][0]にプレイヤー番号、[][1]に手札枚数、[][2]に階級
+  //直前のもの(?)
+  int player_info3[5][3];//[0][]に自分、[1][]に自分のひとつ前に座っている人・・・
+  //[][0]にプレイヤー番号、[][1]に手札枚数、[][2]に階級
+  //前の自分の番のもの(?)
+							
+  int playable_player;//未完成
+						
+  int mae_player_hands;
+  int onset_flag;
+
+  int count;
+  int count2;
+  int count3;
+							
+							
+  //他のプレイヤーの提出を考える際に用いた。
+  int ord2;
+  int sequence2;
+  int qty2;
+  int suit2[5];
+}state;
+
+
+//場を流せると判断する値
+#define STRONG 86
+
+//状態を表示しない場合0
+//接続が最初のときのみ表示する場合1
+//表示する場合2
+#define PRINT_SCORE 0
+#define PRINT_PAT 0
+#define PRINT_STATE 0
+//defineの変更を適用するにはcファイルも一度変更する必要がある
+
+void showState(struct state_type *state);
+void getField(int cards[8][15]);
+void getState(int cards[8][15]);
+void getField(int cards[8][15]);
+
+void cardsOr(int cards1[8][15],int cards2[8][15]);
+void cardsAnd(int cards1[8][15],int cards2[8][15]);
+void cardsDiff(int cards1[8][15],int cards2[8][15]);
+void cardsNot(int cards[8][15]);
+
+void outputTable(int table_val[8][15]);
+void copyTable(int dest_table[8][15],int org_table[8][15]);
+void copyCards(int cardsTar[8][15],int cardsOrg[8][15]);
+void clearCards( int cards[8][15]);
+void clearTable( int cards[8][15]);
+int beEmptyCards(int cards[8][15]);
+int qtyOfCards(int cards[8][15]);
+
+void makeJKaidanTable(int tgt_cards[][15], int my_cards[][15]);
+void makeKaidanTable(int tgt_cards[][15], int my_cards[][15]);
+void makeGroupTable(int tgt_cards[][15], int my_cards[][15]);
+void makeJGroupTable(int tgt_cards[][15], int my_cards[][15]);
+
+void lowCards(int out_cards[8][15],int my_cards[8][15],int threshold);
+void highCards(int out_cards[8][15],int my_cards[8][15],int threshold);
+int nCards(int n_cards[8][15],int target[8][15],int n);
+
+void lockCards(int target_cards[8][15],int suit[5]);
+void lowGroup(int out_cards[8][15],int my_cards[8][15],int group[8][15]);
+void highGroup(int out_cards[8][15],int my_cards[8][15],int group[8][15]) ;
+void lowSequence(int out_cards[8][15],int my_cards[8][15],int sequence[8][15]);
+void highSequence (int out_cards[8][15],int my_cards[8][15],int sequence[8][15]);
+void removeGroup(int out_cards[8][15],int my_cards[8][15],int group[8][15]);
+void removeSequence(int out_cards[8][15],int my_cards[8][15],int sequence[8][15]);
+void lowSolo(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void highSolo(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+
+void change(int out_cards[8][15],int my_cards[8][15],int num_of_change);
+
+void lead(int out_cards[8][15],int my_cards[8][15]);
+void leadRev(int out_cards[8][15],int my_cards[8][15]);
+
+void followSolo(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSoloRev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroupRev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequenceRev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void follow(int out_cards[8][15],int my_cards[8][15]);
+void followRev(int out_cards[8][15],int my_cards[8][15]);
+
+int cmpCards(int cards1[8][15],int  cards2[8][15]);
+int cmpState(struct state_type* state1,struct state_type* state2);
+
+int getLastPlayerNum(int ba_cards[8][15]);
+
+
+int setmake(int out_cards[][15],int my_cards[8][15],int joker_flag);
+int kaidanhand(int select_cards[][15],int search[8][15],int own_cards[8][15]);
+int grouphand(int select_cards[][15],int search[8][15],int n);
+void kou_lead(int select_cards[][15],int own_cards[8][15],int max,int used_cards[8][15],int tes[3][4][3]);
+void kou_followgroup(int select_cards[][15],int own_cards[8][15],int max,int used_cards[8][15],int tes[3][4][3]);
+void kou_followsequence(int select_cards[][15],int own_cards[8][15],int max,int used_cards[8][15],int tes[3][4][3]);
+void kou_change(int out_cards[8][15],int my_cards[8][15],int num_of_change,int tes[3][4][3]);
+
+void pat_make(int pattern[][7],int own_cards[8][15],int max,int used_cards[8][15],int joker_flag,int tes[3][4][3]);
+void value_strong(int pattern[][7],int own_cards[8][15],int used_cards[8][15],int rev,int n,int tes[3][4][3]);
+
+void cardprint(int own_cards[8][15]);
+void Tableprint(int own_cards[8][15],int print);
+
+
+
+////////VV-8 /////
+
+//2015年に作ったプログラムからの流用とか//
+void copyTable2(int dest_table[8][15], int org_table[8][15]);//場のカードを保存
+void copyTable3(int dest_table[8][15], int org_table[8][15]);//場のカードを保存
+void copyTable4(int dest_table[8][15], int org_table[8][15]);//場のカードを保存
+void copyTable5(int dest_table[8][15], int org_table[8][15]);//場のカードを保存//my_lead14用
+void outputCards(int table[8][15]);
+int sameCards(int dest_cards[8][15],int org_cards[8][15]);
+//ここまで。//
+	
+	
+//ここから、新規。//
+void clearCards2(int cards[8][15]);
+int joker_check(int table[8][15]);
+//int joker_check2(int table[8][15]);
+int joker_check3(int table[8][15]);
+int joker_delete(int table[8][15]);
+int s3_check(int table[8][15]);
+void player_number_count(int cards[8][15]);
+int player_info6(int m,int cards[8][15]);
+int player_info6_2(int m,int cards[8][15]);
+int player_info6_3(int m,int cards[8][15]);
+void outputkumi_info(int kaisuu);
+void outputkumi_info2(int table[16][60]);
+void clearkumi_info(int kaisuu);
+void clearkumi_info2();
+void copyplayer_info();
+void outputplayer_info(int n,int s);
+void clearplayer_info(int s);
+int nagare_check();
+int mae_check();
+int pass_check();//うまくいっていない。
+	
+int max_kumi_info(int n);
+int min_kumi_info(int n);
+int max_kumi_info_kakou(int n);
+int min_kumi_info_kakou(int n);
+int min_kumi_info_kakou2(int n);
+
+
+//枚数カウント系
+int qtyOfCards2(int cards[8][15]);//ペア用
+int qtyOfCards3(int cards[8][15]);//階段用
+int qtyOfCards4(int cards[8][15]);//「1」のみを数える
+int qtyOfCards5(int cards[8][15],int rank);//そのランクのカードの枚数を数える。
+int qtyOfCards6(int cards[8][15],int mark,int rank);//引数で渡されたところにカードがあるかの確認。
+int qtyOfCards7(int cards[8][15],int rank);//引数で渡されたランクよりも小さいランクの枚数
+int qtyOfCards8(int cards[8][15],int rank);//引数で渡されたランクよりも大きいランクの枚数
+int qtyOfCards9(int cards[8][15]);//同じランクのカード4枚の提出によって、革命が起こされるかを確認
+int qtyOfCards10(int cards[8][15]);//5枚組以上の階段の提出によって、革命が起こされるかを確認
+int qtyOfCards11(int cards[8][15],int mark);//自分の手札と提出されたカード（提出されていなカード）を参照し、縛りの場合、自分が流す権利を持っているかを確認する。
+int qtyOfCards12(int cards[8][15],int rank,int mark);//マークを指定して、引数で渡されたランクよりも小さいランクの枚数
+int qtyOfCards13(int cards[8][15],int rank,int mark);//マークを指定して、引数で渡されたランクよりも大きいランクの枚数
+int qtyOfCards14(int cards[8][15],int rank);//引数で渡されたランクよりも小さいランクの枚数をマークごとに数えて、最も少なかったマークを返す//submit_cardsでの使用を想定しており、0の数を数えている。
+int qtyOfCards15(int cards[8][15],int rank);//引数で渡されたランクよりも大きいランクの枚数をマークごとに数えて、最も少なかったマークを返す
+int get_suit(int cards[8][15]);
+int get_suitsum(int cards[8][15]);
+int get_rank_max(int cards[8][15]);
+int get_rank_min(int cards[8][15]);
+	
+void cardsOr2(int cards1[8][15],int cards2[8][15]);
+void cardsDiff2(int cards1[8][15],int cards2[8][15]);
+void cardsDiff3(int cards1[8][15],int cards2[8][15]);
+void cardsDiff4(int cards1[8][15],int cards2[8][15]);
+void cardsNot2(int cards1[8][15],int cards2[8][15]);
+	
+void lowSolo2(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void lowSolo2_1(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void lowSolo2_2(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void highSolo2(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void highSolo2_1(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void lowSolo3(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void highSolo3(int out_cards[8][15],int my_cards[8][15],int joker_flag);//高いほうから探すが、jokerは[0][14]で出す。
+	
+void lowCards2(int out_cards[8][15],int my_cards[8][15],int threshold,int mark);//あるマークのthreshold以上のカードは消える。
+void highCards2(int out_cards[8][15],int my_cards[8][15],int threshold,int mark);//あるマークのthreshold以下のカードは消える。
+	
+void makeJGroupTable2(int tgt_cards[][15], int my_cards[][15]);
+	
+//提出できる組を検討。（？）
+void Group2(int out_cards[8][15],int my_cards[8][15],int group[8][15],int rank,int qty,int pattern);
+void Sequence2(int out_cards[8][15],int my_cards[8][15],int mark,int qty,int pattern);
+	
+int nCards2(int n_cards[8][15],int target[8][15],int n);
+
+
+//他のプレイヤーの提出を考える(1)
+int follow_o(int out_cards[8][15],int my_cards[8][15]);//マークに関係なく、その手札で出せるカードがあるかの確認//現在の場において
+void followSolo_o(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup_o(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence_o(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void makeJKaidanTable_o(int tgt_cards[][15], int my_cards[][15]);
+void makeJGroupTable_o(int tgt_cards[][15], int my_cards[][15]);
+//get_Field2を使用(2)
+//最も大きい札を提出する。
+void getField2(int cards[8][15]);
+int follow_o_shibari(int out_cards[8][15],int my_cards[8][15]);//あるマークにおいて、その手札で出せるカードがあるかの確認//ある場において
+void followSolo_o_shibari(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup_o_shibari(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence_o_shibari(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+int follow_o2(int out_cards[8][15],int my_cards[8][15]);//マークに関係なく、その手札で出せるカードがあるかの確認//ある場において
+void followSolo_o2(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup_o2(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence_o2(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+//最も小さい札を提出する。	
+int follow_o3_shibari(int out_cards[8][15],int my_cards[8][15]);//あるマークにおいて、その手札で出せるカードがあるかの確認//ある場において
+void followSolo_o3_shibari(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup_o3_shibari(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence_o3_shibari(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+int follow_o3(int out_cards[8][15],int my_cards[8][15]);//マークに関係なく、その手札で出せるカードがあるかの確認//ある場において
+void followSolo_o3(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup_o3(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence_o3(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+//革命時	
+//他のプレイヤーの提出を考える(3)
+int follow_o_rev(int out_cards[8][15],int my_cards[8][15]);
+void followSolo_o_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup_o_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence_o_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+//get_Field2を使用(4)
+//最も小さい札を提出する。
+int follow_o_shibari_rev(int out_cards[8][15],int my_cards[8][15]);
+void followSolo_o_shibari_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup_o_shibari_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence_o_shibari_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+int follow_o2_rev(int out_cards[8][15],int my_cards[8][15]);
+void followSolo_o2_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup_o2_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence_o2_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+//最も大きい札を提出する。
+int follow_o3_shibari_rev(int out_cards[8][15],int my_cards[8][15]);
+void followSolo_o3_shibari_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup_o3_shibari_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence_o3_shibari_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+int follow_o3_rev(int out_cards[8][15],int my_cards[8][15]);
+void followSolo_o3_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followGroup_o3_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void followSequence_o3_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+
+//提出系
+void my_lead(int out_cards[8][15],int my_cards[8][15]);
+	
+void my_follow(int out_cards[8][15],int my_cards[8][15]);
+void my_followSolo(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_followGroup(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_followSequence(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+
+void my_finish_lead(int out_cards[8][15],int my_cards[8][15]);
+
+void my_finish_follow2(int out_cards[8][15],int my_cards[8][15]);
+void my_finish_followSolo2(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followGroup2(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followSequence2(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+
+//対戦相手用（自分が出した後に、相手が勝つことがあるか。）
+void my_finish_follow2_o(int out_cards[8][15],int my_cards[8][15]);
+void my_finish_followSolo2_o(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followGroup2_o(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followSequence2_o(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+	
+void my_finish_follow2_o_rev(int out_cards[8][15],int my_cards[8][15]);
+void my_finish_followSolo2_o_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followGroup2_o_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followSequence2_o_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+//
+	
+void my_finish_follow3(int out_cards[8][15],int my_cards[8][15]);
+void my_finish_followSolo3(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followGroup3(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followSequence3(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+	
+void my_finish_follow4(int out_cards[8][15],int my_cards[8][15]);//そのカードをfollowで出した後、相手がそれを流せるかを考える
+void my_finish_followSolo4(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followGroup4(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+	
+void my_finish_follow5(int out_cards[8][15],int my_cards[8][15]);
+void my_finish_followSolo5(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followGroup5(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followSequence5(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+	
+void my_follow3(int out_cards[8][15],int my_cards[8][15]);
+void my_followSolo3(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_followGroup3(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_followSequence3(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+	
+void my_lead5(int out_cards[8][15],int my_cards[8][15]);
+void my_lead5_1(int out_cards[8][15],int my_cards[8][15]);
+int  my_lead5_4(int out_cards[8][15],int my_cards[8][15]);
+void my_lead6(int out_cards[8][15],int my_cards[8][15]);
+void my_lead7(int out_cards[8][15],int my_cards[8][15]);
+void my_lead8(int out_cards[8][15],int my_cards[8][15]);
+void my_lead9(int out_cards[8][15],int my_cards[8][15]);
+void my_lead10(int out_cards[8][15],int my_cards[8][15]);	
+void my_lead11(int out_cards[8][15],int my_cards[8][15]);
+void  my_lead14(int out_cards[8][15],int my_cards[8][15]);
+
+void my_lead5_rev(int out_cards[8][15],int my_cards[8][15]);
+void  my_lead5_1_rev(int out_cards[8][15],int my_cards[8][15]);
+int  my_lead5_rev_4(int out_cards[8][15],int my_cards[8][15]);
+void my_lead6_rev(int out_cards[8][15],int my_cards[8][15]);
+void my_lead7_rev(int out_cards[8][15],int my_cards[8][15]);
+void my_lead8_rev(int out_cards[8][15],int my_cards[8][15]);
+void my_lead9_rev(int out_cards[8][15],int my_cards[8][15]);
+void my_lead10_rev(int out_cards[8][15],int my_cards[8][15]);
+void my_lead11_rev(int out_cards[8][15],int my_cards[8][15]);
+	
+void my_follow_rev(int out_cards[8][15],int my_cards[8][15]);
+void my_followSolo_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_followGroup_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_followSequence_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+	
+void my_follow3_rev(int out_cards[8][15],int my_cards[8][15]);
+void my_followSolo3_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_followGroup3_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_followSequence3_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+	
+void my_follow_s3(int out_cards[8][15],int my_cards[8][15]);
+void my_follow_s3_2(int out_cards[8][15],int my_cards[8][15]);
+
+void my_finish_lead_rev(int out_cards[8][15],int my_cards[8][15]);
+	
+void my_finish_follow2_rev(int out_cards[8][15],int my_cards[8][15]);
+void my_finish_followSolo2_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followGroup2_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followSequence2_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+	
+void my_finish_follow3_rev(int out_cards[8][15],int my_cards[8][15]);
+void my_finish_followSolo3_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followGroup3_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followSequence3_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+	
+void my_finish_follow4_rev(int out_cards[8][15],int my_cards[8][15]);//そのカードをfollowで出した後、相手がそれを流せるかを考える
+void my_finish_followSolo4_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+void my_finish_followGroup4_rev(int out_cards[8][15],int my_cards[8][15],int joker_flag);
+	
+//ここまで
+
+//分割した組、そして手札の情報を数値に
+int setvalue_single(int cards[8][15],int kaisuu);
+int setvalue_pair(int cards[8][15],int kaisuu);
+int setvalue_kaidan(int cards[8][15],int kaisuu);
+int setvalue_hands();
+
+//１枚当たりの評価値を返す
+int setvalue_single2(int cards[8][15]);//kumi_infoに触れない
+int setvalue_pair2(int cards[8][15]);
+int setvalue_kaidan2(int cards[8][15]);
+	
+int setvalue_single_shibari(int cards[8][15],int mark);
+int setvalue_pair_shibari(int cards[8][15],int mark);
+int setvalue_kaidan_shibari(int cards[8][15],int mark);
+//ここまで
+
+//組としての評価値を返す。（２枚以上の組では、強さ評価値等が１００を超える）
+int setvalue_pair3(int cards[8][15]);
+int setvalue_kaidan3(int cards[8][15]);
+	
+int setvalue_pair_shibari3(int cards[8][15],int mark);
+int setvalue_kaidan_shibari3(int cards[8][15],int mark);
+//ここまで
+
+//どの「bunkatsu_noprint」を使うかを判断する
+int bunkatsu_all2(int table[8][15]);
+
+//手札分割を行う。
+//_aは革命を起こさないように組を作成、_cは通常、_revは３を除いて組をつくる。マークなしは２を除いて組をつくる。
+int bunkatsu_noprint(int table[8][15]);//２を除いて、組をつくる//階段→ペア→単体
+int bunkatsu_noprint2(int table[8][15]);						//ペア→階段→単体
+	
+int bunkatsu_noprint_a(int table[8][15]);//２を除いて、革命を起こさない組をつくる
+int bunkatsu_noprint2_a(int table[8][15]);
+
+int bunkatsu_noprint_c(int table[8][15]);//組をつくる
+int bunkatsu_noprint2_c(int table[8][15]);
+	
+int bunkatsu_noprint_a_c(int table[8][15]);//革命を起こさない組をつくる
+int bunkatsu_noprint2_a_c(int table[8][15]);
+	
+int bunkatsu_noprint_rev(int table[8][15]);//３を除いて、組をつくる
+int bunkatsu_noprint2_rev(int table[8][15]);
+	
+int bunkatsu_noprint_a_rev(int table[8][15]);//３を除いて、革命を起こさない組をつくる
+int bunkatsu_noprint2_a_rev(int table[8][15]);
+
+//jokerの使い方を考える
+int bunkatsu_pre2(int table[8][15]);
+int bunkatsu_pre3(int table[8][15]);//手札交換に用いている
+
+//手札交換用
+void my_change(int out_cards[8][15],int table[8][15],int num_of_change);
+void my_change2(int out_cards[8][15],int table[8][15],int num_of_change);
+void my_change3(int out_cards[8][15],int table[8][15],int num_of_change);
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------------//
+//--------------------------------murata(senjutu == 0)----------------------------------------//
+//----------------------------------------------------------------------------------//
+
+//グローバル変数
+extern int seat_tactics_check_on;
+extern int seat_tactics_check_off;
+extern int ba_nagare_single;
+extern int ba_nagare_double;
+extern int ba_nagare_three_cards;
+extern int ba_nagare_max_count;
+extern int ba_nagare_max_count_single;
+extern int ba_nagare_max_count_single_nomal;
+extern int ba_nagare_max_count_single_nomal_rev;
+extern int ba_nagare_max_count_single_sibari;
+extern int ba_nagare_max_count_single_sibari_rev;
+extern int ba_nagare_max_count_double;
+extern int ba_nagare_max_count_double_nomal;
+extern int ba_nagare_max_count_double_nomal_rev;
+extern int ba_nagare_max_count_double_sibari;
+extern int ba_nagare_max_count_double_sibari_rev;
+extern int flag_count_normal;
+extern int pass_check_count;
+extern int ba_nagare_last_playernum;
+
+//[0][0]にジョーカー提出とする、[2]は1枚組か2枚組か、カードの[4][14]の2次元にプレイヤごとの4次元目追加的なイメージ
+//0は場が空の時出したことない、１：非革命状態で出した、２：革命状態で出した
+//419行に記述
+extern int client_log[2][4][14][5];
+extern int client_log_st_pass_off_count;
+
+//グローバル変数
+extern int seat_tactics_flag;
+
+//グローバル変数（席順戦術の有効性確認）
+//[1000]：[0]に1ゲーム目の席順戦略実行回数、１ゲーム目結果の自分の階級を格納する
+//[1000]：[1]に2ゲーム目の席順戦略実行回数、２ゲーム目結果の自分の階級を格納する、１ゲーム目結果の自分の前のクライアントの階級を格納
+//[0]に席順戦術の実行回数、[1]に階級を格納(０：大富豪～４：大貧民)、[3]に前の席のクライアントの階級を格納
+extern int seat_tactics_check[100000][3];
+
+int seat_tactics(int own_cards[8][15], int my_player_num, int seat_order[5], int last_playnum, int used_cards[8][15], int game_count);
+int seat_order_check(int own_cards[8][15], int my_player_num, int seat_order[5], int last_playnum);
+int remaining_client(void);
+int remaining_client_max_hand(int my_player_num);
+int remaining_client_min_hand(int my_player_num);
+int front_client_hand_num_check(int own_cards[8][15], int my_player_num, int seat_order[5], int last_playnum);
+int ba_nagare(int own_cards[8][15], int seat_order[5], int used_cards[8][15]);
+int ba_nagare_single_variable(int own_cards[8][15], int seat_order[5], int used_cards[8][15]);
+int ba_nagare_double_variable(int own_cards[8][15], int seat_order[5], int used_cards[8][15]);
+int now_cards_ord_used(int used_cards[8][15], int own_cards[8][15]);
+int now_cards_ord(int used_cards[8][15]);
+int ba_nagare_max(int own_cards[8][15], int used_cards[8][15]);
+int ba_nagare_max_single(int own_cards[8][15], int used_cards[8][15]);
+int ba_nagare_max_double(int own_cards[8][15], int used_cards[8][15]);
+
+int pass_check(int own_cards[8][15], int ba_cards[8][15]);
+int pass_check_solo(int own_cards[8][15], int ba_cards[8][15]);
+int pass_check_group(int own_cards[8][15], int ba_cards[8][15]);
+int pass_check_kaidan(int own_cards[8][15], int ba_cards[8][15]);
+
+int kou_e_value(int own_cards[8][15], int seat_order[5], int used_cards[8][15]);
+
+int front_client_log_st(int own_cards[8][15], int my_player_num, int seat_order[5], int last_playnum, int used_cards[8][15], int game_count);
+
+/*
+<関数関連図>
+seat_tactics
+	remaining_client
+	remaining_client_max_hand
+	front_client_hand_num_check
+	seat_order_chack
+	ba_nagare
+		ba_nagare_max
+			ba_nagare_max_single
+			ba_nagare_max_double
+		if(ba_nagare_mode==1)
+		if(ba_nagare_mode==2)
+			ba_nagare_single_variable
+				now_cards_ord_used
+				now_cards_ord
+			ba_nagare_double_variacle
+				now_cards_ord_used
+				now_cards_ord
+
+pass_check
+	pass_check_solo
+	pass_check_group
+	pass_check_kaidan
+*/
