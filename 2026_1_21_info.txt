@@ -12,11 +12,11 @@
 
 <データ集計結果>
 
-1, Switch2+
-2, switch2_test
+0, Switch2+
+1, switch2_test
+2, default
 3, default
 4, default
-5, default
 
 --------- total point
 38865 38800 24052 24043 24240
@@ -24,19 +24,27 @@ All games are overed
 <備考>
 途中経過でswitch2_testがSwitch2+より点数が高くなっていた場面は伺えなかった
 
+0, switch2_test
 1, Switch2+
 2, Switch2+
 3, Switch2+
 4, Switch2+
-5, switch2_test
 
 --------- total point
-29745 30274 29824 30197 29960
+29960 29745 30274 29824 30197
+All games are overed
+
+--------- total point
+29460 30030 29934 30257 30319
 All games are overed
 
 <備考>
+1回目
 序盤はswitch2_testは点数が高かったものの、その後最下位に転落。
 終盤で逆転し、2, 3位まで浮上。
+
+2回目
+中盤から失速気味、終盤かなり失速していたように見受けられる。
 
 <前回の変更による結論>
 一つの戦略に追加したものが結果に与えた影響は少ないと考える。
@@ -175,3 +183,6 @@ if(senjutu == 3){
 
 データを言葉にして残すのは大切ですね(今更)
 これからもこの進捗を文字に残すという形態を続けていこうと思います。
+
+<輪講後の教授からの意見>
+まずはSwitch2+に追加として組み込んでみて差異を確認してみるのはどうかね
