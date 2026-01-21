@@ -62,6 +62,101 @@ or
 (なお、コードが3万行であるためどこに書けばよいのか追い切れていない
 →Switch2+のコード内の理解が追い付いていない可能性(もしかしたら私だけかも))
 →次回までにコードの理解深めておきます(ごめんなさいに尽きる)
+→[1/21 10:40]今解決しました（後述
+
+3万行のコードはあくまでclient.cに使用するためのメソッドを置いているdaihinmin.cのファイルのことで、
+戦略云々の話はclient.cにあった模様。
+前回記述していた内容を見たところ、senjutu=3で戦術を追加した戦術のみに固定し、
+戦術選択のコードを全てコメントアウトしていた模様
+→使われていない事象は存在しないため、この仮説は排除できる
+↓以下、そう言えるであろう理由のコード
+
+    //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    //使用する戦術の決定
+
+    senjutu = 3;　←ここで固定
+
+    /*if (game_count % 100 == 1) {　　←ここからコメントアウト
+      for (i = 0; i < 100; i++) {
+        values[i] = i;
+      }
+      shuffle(values, size);
+    }
+    tyuusen = values[game_count % 100];
+   
+    if (game_count <= 1000) 
+    {
+      if (tyuusen < 17) {
+        senjutu = 0;
+      } else if ((17 <= tyuusen) && (tyuusen < 34)) {
+        senjutu = 1;
+      } else if ((34 <= tyuusen) && (tyuusen < 51)) {
+        senjutu = 2;
+      } else if ((51 <= tyuusen) && (tyuusen < 68)) {
+        senjutu = 3;
+      } else if ((68 <= tyuusen) && (tyuusen < 84)) {
+        senjutu = 4;
+      } else {
+        senjutu = 5;
+      }
+    }
+    
+    ………
+
+不安で、実際にclient.cの試合をループさせる処理の最初と最後に以下のコードを打ち込んで1000試合実行
+(なお、最初はfirstSenjutu3Count, 最後はlastSenjutu3Countとして別々の変数にし、被らないようにしている)
+
+各ゲームの最初
+if (senjutu == 3) {
+    firstSenjutu3Count++;
+    fprintf(stderr, "[start senjutu3 count] %d \n", firstSenjutu3Count);
+}
+
+各ゲームの最後
+if (senjutu == 3) {
+    lastSenjutu3Count++;
+    fprintf(stderr, "[finish senjutu3 count] %d \n", lastSenjutu3Count);
+}
+
+実行結果は以下の通り(最後のログのみ)
+[start senjutu3 count] 1000
+[finish senjutu3 count] 1000
+→試合回数と一致
+→途中で戦略の値が塗り替えられていなければずっと追加変更した戦略のみ使用していることが確定
+
+Switch2+から追加したコードの内容（ここ以外変わっていない）
+
+if(senjutu == 3){
+    // 1つ上の順位の人を狙う処理
+
+    int target_id = -1; // ターゲットのID
+    int my_rank_now = ss.old_rank[my_playernum]; // 自分の順位
+
+    // 1つ上の順位の人を探す
+    for(i = 0; i < 5; i++){
+        if(ss.old_rank[i] == my_rank_now - 1){
+            target_id = i;
+            break;
+        }
+    }
+    // 場にカードが出ていて(onset==0)、かつ 直前に出したのがターゲットなら
+    if (state.onset == 0 && last_playernum == target_id && target_id != -1) {
+        // 評価値を上げて、勝てるカードがあれば無理やり出させる
+        attack_flag = 1;
+
+        for (j = 0; j < 3; j++) {     // j:進行度(序盤中盤終盤)
+            for (k = 0; k < 4; k++) { // k:役の種類
+                 tes[j][k][2] += 100; 
+            }
+        }
+    }
+}
+
+1位の時はtarget_id = -1のまま
+→攻撃対象がないので永久に攻撃フラグが立たず、攻撃的にならない（？）
+
+戦術3がどんな内容なのかをちゃんと把握しなければ言った通り変わんない（重要）
+→元の戦術3のみと対戦結果を比べてみると強くなったかわかるかも…？
 
 <追加コメント>
 10000試合の実行でかかる時間は約5分程(orそれよりもかからない位)
@@ -79,4 +174,4 @@ or
 お許しください。
 
 データを言葉にして残すのは大切ですね(今更)
-これからもこの形態を続けていこうと思います。
+これからもこの進捗を文字に残すという形態を続けていこうと思います。
